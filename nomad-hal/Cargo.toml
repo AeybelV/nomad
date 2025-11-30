@@ -1,0 +1,11 @@
+[package]
+name = "nomad-hal"
+version = "0.1.0"
+edition = "2024"
+authors = ["Aeybel Varghese <aeybelvarghese@gmail.com>"]
+license = "Apache-2.0"
+description = "Nomad Hardware Abstraction Layer, Traits that allow Nomad to access hardware resources"
+repository = "https://github.com/AeybelV/nomad"
+readme = "README.md"
+
+[dependencies]

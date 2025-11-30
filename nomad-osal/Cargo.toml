@@ -1,0 +1,11 @@
+[package]
+name = "nomad-osal"
+version = "0.1.0"
+edition = "2024"
+authors = ["Aeybel Varghese <aeybelvarghese@gmail.com>"]
+license = "Apache-2.0"
+description = "Nomad Operating System Layer, wrappers for POSIX and RTOS APIS"
+repository = "https://github.com/AeybelV/nomad"
+readme = "README.md"
+
+[dependencies]
