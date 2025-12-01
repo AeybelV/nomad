@@ -1,9 +1,48 @@
+//! Nomad FSW
+//!
+//! Reference Flight Software using Nomad Framework
+
+/// TODO: Import if building for POSIX
 use std::env;
 
+// Nomad Core
+use nomad_core::component::ComponentId;
+
+// Standard Services
+use nomad_core::components::log;
+
+// Logging Macros
+use nomad_core::{log_info, log_warn};
+use nomad_osal::make_default_log_sink;
+
+/// FSW Entrypoint
 fn main() {
+    // TODO: Only print this if building for POSIX
     print_fsw_info();
+
+    // Instantiates some Component ID's
+    // TODO: This will all be handled by the component system when implemented
+    const FSW_MAIN: ComponentId = ComponentId(0);
+    const IMU: ComponentId = ComponentId(2);
+
+    // Starts the LogService component
+    // TODO: Startup the logging service using the component system
+    let mut logging = log::LogService::<256>::new();
+
+    // FSW components can use macros to log to a logger
+    // TODO: When the component bus exists, the macro should be cleaner
+    log_info!(&mut logging, FSW_MAIN, "Nomad FSW starting");
+    log_info!(&mut logging, IMU, "IMU init sequence starting");
+    log_warn!(&mut logging, IMU, "IMU using default calibration");
+
+    // Drains/flushes logs
+    // TODO: When timing and componnts works. LogService
+    // should periodically drain logs rather than us manually doing it
+    let mut sink = make_default_log_sink();
+    logging.drain(&mut sink);
 }
 
+/// Prints build information about the FSW binary
 fn print_fsw_info() {
     let pkg_name = env!("CARGO_PKG_NAME");
     let pkg_version = env!("CARGO_PKG_VERSION");
@@ -29,4 +68,5 @@ fn print_fsw_info() {
     println!("Build time    : {build_time}");
     println!("Build profile : {build_profile}");
     println!("Build target  : {build_target}");
+    println!();
 }

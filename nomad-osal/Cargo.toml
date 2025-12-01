@@ -9,3 +9,18 @@ repository = "https://github.com/AeybelV/nomad"
 readme = "README.md"
 
 [dependencies]
+nomad-core = { path = "../nomad-core" }
+
+[features]
+# ========== Platform selection ==========
+posix = []
+baremetal = [] # TODO: Implement in the futre using RTIC
+
+# ===== Log Sinks =====
+console-stdout = ["posix"]
+console-rtt = ["baremetal"] # TODO: Implement in the future when I get around to baremetal
+
+# ===== stdout =====
+stdout-color = []
+
+default = ["posix", "console-stdout", "stdout-color"]

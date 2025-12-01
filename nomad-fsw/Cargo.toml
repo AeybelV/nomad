@@ -8,5 +8,9 @@ description = "Nomad Flight Software Project, Reference FSW for the Laika Flight
 repository = "https://github.com/AeybelV/nomad"
 readme = "README.md"
 
+[dependencies]
+nomad-core = { path = "../nomad-core" }
+nomad-osal = { path = "../nomad-osal" }
+
 [build-dependencies]
 chrono = "0.4.42"

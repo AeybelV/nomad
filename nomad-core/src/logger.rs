@@ -1,8 +1,23 @@
-//! Nomad Logging Module
+//! Nomad Logging Primitives
 //!
-//! Provides a in-memory logging framework
+//! Provides Logging primities that can be used to implement Loggers
 
 use crate::component::ComponentId;
+
+/// A LogSink is the final destination of log records.
+/// It consumes a LogRecord. It can be used to implement
+/// log endpoints such as file logging or console based logging
+pub trait LogSink {
+    fn write(&mut self, record: &LogRecord);
+}
+
+/// LogHandle is Trait to implement a Logger
+/// A Logger is a service that FSW components can use to send their logs.
+/// The Logger is responsible for creating LogRecords and routing them to the correct
+/// destination. It will manage LogRecords, the LogBuffer, and LogSinks
+pub trait LogHandle {
+    fn log_message(&mut self, component: ComponentId, level: LogLevel, message: &'static str);
+}
 
 /// Severity levels for logging.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -13,7 +28,7 @@ pub enum LogLevel {
     Error,
 }
 
-/// A singular log entry that is stored in the log ring buffer
+/// A represenation of a log entry
 #[derive(Copy, Clone, Debug)]
 pub struct LogRecord {
     pub level: LogLevel,
@@ -21,7 +36,8 @@ pub struct LogRecord {
     pub message: &'static str,
 }
 
-/// In-memory ring buffer for log records
+/// In-memory ring buffer for log records. Loggers will manage these and store
+/// LogRecords in them
 pub struct LogBuffer<const LOGGER_CAPACITY: usize> {
     records: [Option<LogRecord>; LOGGER_CAPACITY],
     head: usize,
@@ -67,54 +83,23 @@ impl<const LOGGER_CAPACITY: usize> LogBuffer<LOGGER_CAPACITY> {
         self.head = 0;
         self.len = 0;
     }
-}
 
-// ========== Logging Macros ==========
+    /// Drain all current records, oldest to newest.
+    pub fn drain<F: FnMut(&LogRecord)>(&mut self, mut f: F) {
+        while self.len > 0 {
+            let idx = self.head;
+            if let Some(rec) = self.records[idx].take() {
+                f(&rec);
+            }
+            self.head = (self.head + 1) % LOGGER_CAPACITY;
+            self.len -= 1;
+        }
+        // After draining, head points to where the next element will be written.
+    }
 
-/// Wrapper used by logging macros
-pub fn log_raw<const CAP: usize>(
-    buf: &mut LogBuffer<CAP>,
-    component: ComponentId,
-    level: LogLevel,
-    message: &'static str,
-) {
-    buf.push(LogRecord {
-        level,
-        component,
-        message,
-    });
-}
-
-/// Log at DEBUG level.
-#[macro_export]
-macro_rules! log_debug {
-    ($buf:expr, $comp:expr, $msg:expr) => {
-        log_raw($buf, $comp, $crate::LogLevel::Debug, $msg)
-    };
-}
-
-/// Log at INFO level.
-#[macro_export]
-macro_rules! log_info {
-    ($buf:expr, $comp:expr, $msg:expr) => {
-        log_raw($buf, $comp, $crate::LogLevel::Info, $msg)
-    };
-}
-
-/// Log at WARN level.
-#[macro_export]
-macro_rules! log_warn {
-    ($buf:expr, $comp:expr, $msg:expr) => {
-        log_raw($buf, $comp, $crate::LogLevel::Warn, $msg)
-    };
-}
-
-/// Log at ERROR level.
-#[macro_export]
-macro_rules! log_error {
-    ($buf:expr, $comp:expr, $msg:expr) => {
-        log_raw($buf, $comp, $crate::LogLevel::Error, $msg)
-    };
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
 }
 
 // ========== TESTS ==========
@@ -296,18 +281,5 @@ mod tests {
         assert_eq!(comps[0], Some(ComponentId(0)));
         assert_eq!(comps[1], Some(ComponentId(1)));
         assert_eq!(comps[2], Some(ComponentId(2)));
-    }
-
-    #[test]
-    /// Log using macros
-    fn log_macros() {
-        const CAP: usize = 4;
-        let mut buf: LogBuffer<CAP> = LogBuffer::new();
-
-        const FSW: ComponentId = ComponentId(1);
-        const IMU: ComponentId = ComponentId(2);
-
-        log_info!(&mut buf, FSW, "FSW starting");
-        log_warn!(&mut buf, IMU, "IMU calibration missing");
     }
 }

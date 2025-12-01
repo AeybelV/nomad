@@ -119,6 +119,8 @@ name = "nomad-fsw"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "nomad-core",
+ "nomad-osal",
 ]
 
 [[package]]
@@ -128,6 +130,9 @@ version = "0.1.0"
 [[package]]
 name = "nomad-osal"
 version = "0.1.0"
+dependencies = [
+ "nomad-core",
+]
 
 [[package]]
 name = "num-traits"
