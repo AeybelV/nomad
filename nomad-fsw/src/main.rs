@@ -13,7 +13,7 @@ use nomad_core::components::log;
 
 // Logging Macros
 use nomad_core::{log_info, log_warn};
-use nomad_osal::make_default_log_sink;
+use nomad_osal::logsinks::make_default_log_sink;
 
 /// FSW Entrypoint
 fn main() {
