@@ -2,6 +2,8 @@
 //!
 //! Provides a in-memory logging framework
 
+use crate::component::ComponentId;
+
 /// Severity levels for logging.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum LogLevel {
@@ -15,7 +17,7 @@ pub enum LogLevel {
 #[derive(Copy, Clone, Debug)]
 pub struct LogRecord {
     pub level: LogLevel,
-    pub component: u32,
+    pub component: ComponentId,
     pub message: &'static str,
 }
 
@@ -67,6 +69,54 @@ impl<const LOGGER_CAPACITY: usize> LogBuffer<LOGGER_CAPACITY> {
     }
 }
 
+// ========== Logging Macros ==========
+
+/// Wrapper used by logging macros
+pub fn log_raw<const CAP: usize>(
+    buf: &mut LogBuffer<CAP>,
+    component: ComponentId,
+    level: LogLevel,
+    message: &'static str,
+) {
+    buf.push(LogRecord {
+        level,
+        component,
+        message,
+    });
+}
+
+/// Log at DEBUG level.
+#[macro_export]
+macro_rules! log_debug {
+    ($buf:expr, $comp:expr, $msg:expr) => {
+        log_raw($buf, $comp, $crate::LogLevel::Debug, $msg)
+    };
+}
+
+/// Log at INFO level.
+#[macro_export]
+macro_rules! log_info {
+    ($buf:expr, $comp:expr, $msg:expr) => {
+        log_raw($buf, $comp, $crate::LogLevel::Info, $msg)
+    };
+}
+
+/// Log at WARN level.
+#[macro_export]
+macro_rules! log_warn {
+    ($buf:expr, $comp:expr, $msg:expr) => {
+        log_raw($buf, $comp, $crate::LogLevel::Warn, $msg)
+    };
+}
+
+/// Log at ERROR level.
+#[macro_export]
+macro_rules! log_error {
+    ($buf:expr, $comp:expr, $msg:expr) => {
+        log_raw($buf, $comp, $crate::LogLevel::Error, $msg)
+    };
+}
+
 // ========== TESTS ==========
 
 #[cfg(test)]
@@ -107,7 +157,7 @@ mod tests {
 
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(0),
             message: "Hello World!",
         });
 
@@ -128,17 +178,17 @@ mod tests {
 
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(0),
             message: "one",
         });
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 1,
+            component: ComponentId(1),
             message: "two",
         });
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 2,
+            component: ComponentId(2),
             message: "three",
         });
 
@@ -158,17 +208,17 @@ mod tests {
 
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(0),
             message: "one",
         });
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(1),
             message: "two",
         });
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(2),
             message: "three",
         });
 
@@ -186,12 +236,12 @@ mod tests {
 
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(0),
             message: "one",
         });
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(1),
             message: "two",
         });
 
@@ -205,7 +255,7 @@ mod tests {
         buf.push(LogRecord {
             level: LogLevel::Warn,
             message: "after clear",
-            component: 0,
+            component: ComponentId(0),
         });
 
         let result2 = collect_messages(&buf);
@@ -213,29 +263,29 @@ mod tests {
     }
 
     #[test]
-    // Pushes log entries from multipe components
+    /// Pushes log entries from multipe components
     fn multiple_components() {
         const CAP: usize = 4;
         let mut buf: LogBuffer<CAP> = LogBuffer::new();
 
         buf.push(LogRecord {
             level: LogLevel::Info,
-            component: 0,
+            component: ComponentId(0),
             message: "fsw msg",
         });
         buf.push(LogRecord {
             level: LogLevel::Warn,
-            component: 1,
+            component: ComponentId(1),
             message: "imu warn",
         });
         buf.push(LogRecord {
             level: LogLevel::Error,
-            component: 2,
+            component: ComponentId(2),
             message: "nav error",
         });
 
         // Collect both message & component via match
-        let mut comps: [Option<u32>; CAP] = [None; CAP];
+        let mut comps: [Option<ComponentId>; CAP] = [None; CAP];
         let mut idx = 0;
 
         for rec in buf.iter() {
@@ -243,8 +293,21 @@ mod tests {
             idx += 1;
         }
 
-        assert_eq!(comps[0], Some(0));
-        assert_eq!(comps[1], Some(1));
-        assert_eq!(comps[2], Some(2));
+        assert_eq!(comps[0], Some(ComponentId(0)));
+        assert_eq!(comps[1], Some(ComponentId(1)));
+        assert_eq!(comps[2], Some(ComponentId(2)));
+    }
+
+    #[test]
+    /// Log using macros
+    fn log_macros() {
+        const CAP: usize = 4;
+        let mut buf: LogBuffer<CAP> = LogBuffer::new();
+
+        const FSW: ComponentId = ComponentId(1);
+        const IMU: ComponentId = ComponentId(2);
+
+        log_info!(&mut buf, FSW, "FSW starting");
+        log_warn!(&mut buf, IMU, "IMU calibration missing");
     }
 }
