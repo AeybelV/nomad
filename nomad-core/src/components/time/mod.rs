@@ -2,7 +2,7 @@
 //!
 //! A Logger service provided as part of the Nomad Standard Components Collection
 
-use crate::time::TimeSource;
+use crate::time::{MissionTime, TimeSource};
 use core::time::Duration;
 
 /// Standard TimeService FSW Components
@@ -27,7 +27,7 @@ impl<T: TimeSource> TimeService<T> {
     }
 
     /// Mission elapsed time (MET) since mission epoch.
-    pub fn mission_time(&self) -> Duration {
+    pub fn mission_time(&self) -> MissionTime {
         self.source.mission_time()
     }
 

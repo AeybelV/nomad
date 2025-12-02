@@ -4,6 +4,10 @@
 
 use core::time::Duration;
 
+/// Mission-relative, monotonic time.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+pub struct MissionTime(pub Duration);
+
 /// TimeMode selects between HW time vs simulated time.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TimeMode {
@@ -27,5 +31,5 @@ pub struct TimeConfig {
 /// Mission time is time relative to mission epoch, used for logs and telemetry.
 pub trait TimeSource {
     fn monotonic(&self) -> Duration;
-    fn mission_time(&self) -> Duration;
+    fn mission_time(&self) -> MissionTime;
 }

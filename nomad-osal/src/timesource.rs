@@ -8,6 +8,8 @@ use nomad_core::time::{TimeConfig, TimeSource};
 #[cfg(feature = "posix")]
 mod posix_time {
 
+    use nomad_core::time::MissionTime;
+
     use super::*;
     use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -62,10 +64,12 @@ mod posix_time {
                 .unwrap_or(Duration::from_secs(0))
         }
 
-        fn mission_time(&self) -> Duration {
-            Instant::now()
-                .checked_duration_since(self.mission_instant)
-                .unwrap_or(Duration::from_secs(0))
+        fn mission_time(&self) -> MissionTime {
+            MissionTime(
+                Instant::now()
+                    .checked_duration_since(self.mission_instant)
+                    .unwrap_or(Duration::from_secs(0)),
+            )
         }
     }
 
