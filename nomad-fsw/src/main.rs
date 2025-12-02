@@ -11,9 +11,12 @@ use nomad_core::component::ComponentId;
 // Standard Services
 use nomad_core::components::log;
 
+use nomad_core::components::time::TimeService;
+use nomad_core::time::TimeConfig;
 // Logging Macros
 use nomad_core::{log_info, log_warn};
-use nomad_osal::make_default_log_sink;
+use nomad_osal::logsinks::make_default_log_sink;
+use nomad_osal::timesource::make_default_time_source;
 
 /// FSW Entrypoint
 fn main() {
@@ -23,7 +26,7 @@ fn main() {
     // Instantiates some Component ID's
     // TODO: This will all be handled by the component system when implemented
     const FSW_MAIN: ComponentId = ComponentId(0);
-    const IMU: ComponentId = ComponentId(2);
+    const IMU: ComponentId = ComponentId(1);
 
     // Starts the LogService component
     // TODO: Startup the logging service using the component system
@@ -40,6 +43,32 @@ fn main() {
     // should periodically drain logs rather than us manually doing it
     let mut sink = make_default_log_sink();
     logging.drain(&mut sink);
+
+    // Time Subsystem and TimeService
+
+    // Create a basic TimeConfig
+    // TODO: Have config subsystem handle this
+    let time_config = TimeConfig {
+        mode: nomad_core::time::TimeMode::Real,
+        mission_epoch_unix: None,
+    };
+
+    let time_source = make_default_time_source(&time_config);
+    let time_service = TimeService::new(time_source);
+
+    let time_sample1 = time_service.monotonic();
+    let time_sample2 = time_service.mission_time();
+    let time_sample3 = time_service.monotonic();
+    let time_sample4 = time_service.mission_time();
+
+    println!(
+        "Monotonic Sample1: {:?}, Mission Sample2: {:?}",
+        time_sample1, time_sample2
+    );
+    println!(
+        "Monotonic Sample3: {:?}, Mission Sample4: {:?}",
+        time_sample3, time_sample4
+    );
 }
 
 /// Prints build information about the FSW binary

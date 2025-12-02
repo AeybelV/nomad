@@ -3,3 +3,4 @@
 //! A collection of FSW components.
 
 pub mod log;
+pub mod time;
